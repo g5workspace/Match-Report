@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Soccer Match Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    <!-- Nomor Pertandingan -->
+
+    <div class="p-4">
+      <label class="font-bold">Nomor Pertandingan :</label>
+      <input
+        id="matchNumber"
+        type="number"
+        placeholder="#NP"
+        class="border px-2 py-1 bg-gray-300 rounded font-bold w-16 ml-2"
+        onblur="fetchTeams()"
+      />
+    </div>
+
+    <!-- Stopwatch -->
+
+    <div id="timer" class="flex justify-center text-6xl font-bold mb-4">
+      00:00
+    </div>
+    <div class="flex justify-center ml-4 mb-6 space-x-6">
+      <button
+        onclick="startTimer()"
+        class="px-6 py-2 bg-green-500 text-white font-bold rounded"
+      >
+        Start
+      </button>
+      <button
+        onclick="pauseTimer()"
+        class="px-6 py-2 bg-yellow-500 text-white font-bold rounded"
+      >
+        Pause
+      </button>
+      <button
+        onclick="resetTimer()"
+        class="px-6 py-2 bg-red-500 text-white font-bold rounded"
+      >
+        Reset
+      </button>
+    </div>
+
+    <!-- Scoreboard -->
+
+    <div class="flex justify-between items-center px-8 mb-6">
+      <div class="text-center flex-1">
+        <h2 class="text-xl text-decoration-line: underline">Home Team</h2>
+        <span id="homeTeam" class="text-4xl font-bold text-red-600"></span>
+        <div id="homeScore" class="text-6xl font-bold">0</div>
+      </div>
+      <div class="text-center flex-1">
+        <h2 class="text-xl text-decoration-line: underline">Away Team</h2>
+        <span id="awayTeam" class="text-4xl font-bold text-red-600"></span>
+        <div id="awayScore" class="text-6xl font-bold">0</div>
+      </div>
+    </div>
+
+    <!-- Tombol Event -->
+
+    <div class="flex justify-between px-8">
+      <div class="space-y-2">
+        <button
+          onclick="quickEvent('home','Goal')"
+          class="w-32 px-3 py-2 bg-green-500 text-white rounded"
+        >
+          Goal
+        </button>
+        <button
+          onclick="quickEvent('home','Own Goal')"
+          class="w-32 px-3 py-2 bg-gray-600 text-white rounded"
+        >
+          Own Goal
+        </button>
+        <button
+          onclick="quickEvent('home','Yellow Card')"
+          class="w-32 px-3 py-2 bg-yellow-400 text-white rounded"
+        >
+          Yellow Card
+        </button>
+        <button
+          onclick="quickEvent('home','Red Card')"
+          class="w-32 px-3 py-2 bg-red-600 text-white rounded"
+        >
+          Red Card
+        </button>
+        <button
+          onclick="quickEvent('home','Substitution')"
+          class="w-32 px-3 py-2 bg-blue-600 text-white rounded"
+        >
+          Substitution
+        </button>
+      </div>
+      <div class="space-y-2 text-right">
+        <button
+          onclick="quickEvent('away','Goal')"
+          class="w-32 px-3 py-2 bg-green-500 text-white rounded"
+        >
+          Goal
+        </button>
+        <button
+          onclick="quickEvent('away','Own Goal')"
+          class="w-32 px-3 py-2 bg-gray-600 text-white rounded"
+        >
+          Own Goal
+        </button>
+        <button
+          onclick="quickEvent('away','Yellow Card')"
+          class="w-32 px-3 py-2 bg-yellow-400 text-white rounded"
+        >
+          Yellow Card
+        </button>
+        <button
+          onclick="quickEvent('away','Red Card')"
+          class="w-32 px-3 py-2 bg-red-600 text-white rounded"
+        >
+          Red Card
+        </button>
+        <button
+          onclick="quickEvent('away','Substitution')"
+          class="w-32 px-3 py-2 bg-blue-600 text-white rounded"
+        >
+          Substitution
+        </button>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+
+    <div class="p-6 grid grid-cols-2 gap-6 text-center">
+      <div>
+        <h3 class="text-lg mb-2">Event Log - Home</h3>
+        <div id="homeLog" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="text-lg mb-2">Event Log - Away</h3>
+        <div id="awayLog" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Recap -->
+
+    <div class="p-4 text-center">
+      <button
+        onclick="exportRecap()"
+        class="px-4 py-2 bg-purple-600 text-white rounded"
+      >
+        Export Recap
+      </button>
+    </div>
+
+    <!-- Reset -->
+    <div class="p-4 text-center">
+      <button
+        onclick="resetMatch()"
+        class="px-4 py-2 bg-red-700 text-white rounded"
+      >
+        Reset Match
+      </button>
+    </div>
+
+    <!-- Modal Quick Event -->
+
+    <div
+      id="quickModal"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-6 rounded w-96">
+        <h3 id="quickTitle" class="font-bold mb-4"></h3>
+        <div id="quickSubFields" class="hidden">
+          <label class="block mb-2"
+            >Pemain Keluar:
+            <input
+              id="quickOut"
+              type="number"
+              class="border px-2 py-1 w-full mb-2"
+            />
+          </label>
+          <label class="block mb-2"
+            >Pemain Masuk:
+            <input id="quickIn" type="number" class="border px-2 py-1 w-full" />
+          </label>
+        </div>
+        <div id="quickNumberField" class="">
+          <label class="block mb-2"
+            >Nomor Punggung:
+            <input
+              id="quickNumber"
+              type="number"
+              class="border px-2 py-1 w-full"
+            />
+          </label>
+        </div>
+        <div class="flex justify-end mt-4 space-x-2">
+          <button onclick="cancelQuick()" class="px-3 py-1 bg-gray-400 rounded">
+            Cancel
+          </button>
+          <button
+            onclick="saveQuick()"
+            class="px-3 py-1 bg-green-600 text-white rounded"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Edit Event -->
+
+    <div
+      id="editModal"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-6 rounded w-96">
+        <h3 class="font-bold mb-4">Edit Event</h3>
+        <label class="block mb-2"
+          >Waktu:
+          <input id="editTime" type="text" class="border px-2 py-1 w-full" />
+        </label>
+        <div id="editPlayerFields"></div>
+        <div class="flex justify-end mt-4 space-x-2">
+          <button
+            onclick="closeEditModal()"
+            class="px-3 py-1 bg-gray-400 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="saveEdit()"
+            class="px-3 py-1 bg-blue-600 text-white rounded"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Delete -->
+
+    <div
+      id="deleteModal"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-6 rounded w-96 text-center">
+        <h3 class="text-lg font-bold mb-4">
+          Apakah anda yakin akan menghapus log ini?
+        </h3>
+        <div class="flex justify-center space-x-4">
+          <button
+            onclick="confirmDelete()"
+            class="px-4 py-2 bg-red-600 text-white rounded"
+          >
+            Delete
+          </button>
+          <button
+            onclick="closeDeleteModal()"
+            class="px-4 py-2 bg-gray-400 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Reset Confirmation -->
+    <div
+      id="resetModal"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-6 rounded w-96 text-center">
+        <h3 class="text-lg font-bold mb-4">DATA BERHASIL DIRESET</h3>
+        <button
+          onclick="closeResetModal()"
+          class="px-4 py-2 bg-green-600 text-white rounded"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const SCRIPT_URL =
+        "https://script.google.com/macros/s/AKfycbyzUmMPLA4Lt43GM9dB_jYapgQZhV22jlQ65EoIk2SCRNLlPbNlXDWIAwJn45ygcAWLhw/exec";
+
+      // Stopwatch
+      let timerInterval,
+        seconds = 0,
+        minutes = 0;
+      function updateDisplay() {
+        const m = minutes.toString().padStart(2, "0");
+        const s = seconds.toString().padStart(2, "0");
+        document.getElementById("timer").textContent = `${m}:${s}`;
+      }
+      function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+          seconds++;
+          if (seconds >= 60) {
+            seconds = 0;
+            minutes++;
+          }
+          updateDisplay();
+        }, 1000);
+      }
+      function pauseTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      function resetTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        seconds = 0;
+        minutes = 0;
+        updateDisplay();
+      }
+      function currentTime() {
+        return document.getElementById("timer").textContent;
+      }
+
+      // Fetch Teams
+      function fetchTeams() {
+        const num = document.getElementById("matchNumber").value;
+        if (!num) return;
+
+        const url = `${SCRIPT_URL}?matchNumber=${encodeURIComponent(num)}`;
+        console.log("Fetching teams from:", url);
+
+        fetch(url, { method: "GET" })
+          .then(async (res) => {
+            const txt = await res.text();
+            console.log("Raw response text:", txt);
+            try {
+              const data = JSON.parse(txt);
+              if (data.success === false && !data.homeTeam && !data.awayTeam) {
+                // not found
+                document.getElementById("homeTeam").textContent = "-";
+                document.getElementById("awayTeam").textContent = "-";
+                alert("Tidak ditemukan jadwal untuk NP ini.");
+              } else {
+                document.getElementById("homeTeam").textContent =
+                  data.homeTeam || "-";
+                document.getElementById("awayTeam").textContent =
+                  data.awayTeam || "-";
+              }
+            } catch (err) {
+              console.error("Failed parsing JSON:", err, txt);
+              alert(
+                "Gagal mengambil data tim: respons tidak valid dari server. Cek console (Network)."
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("Fetch error:", err);
+            alert(
+              "Gagal mengambil data tim dari Google Sheet!\nLihat console/network untuk detail."
+            );
+          });
+      }
+
+      // Data
+      let events = [];
+      let quickContext = null;
+      let editIndex = null;
+      let deleteIndex = null;
+
+      // Quick Event
+      function quickEvent(team, type) {
+        quickContext = { team, type, time: currentTime() };
+        document.getElementById(
+          "quickTitle"
+        ).textContent = `${type} - ${team.toUpperCase()} (${
+          quickContext.time
+        })`;
+        document.getElementById("quickNumberField").classList.remove("hidden");
+        document.getElementById("quickSubFields").classList.add("hidden");
+        document.getElementById("quickNumber").value = "";
+        if (type === "Substitution") {
+          document.getElementById("quickNumberField").classList.add("hidden");
+          document.getElementById("quickSubFields").classList.remove("hidden");
+        }
+        document.getElementById("quickModal").classList.remove("hidden");
+        adjustScore(team, type, 1);
+      }
+      function saveQuick() {
+        if (quickContext.type === "Substitution") {
+          let out = document.getElementById("quickOut").value;
+          let inn = document.getElementById("quickIn").value;
+          if (!out || !inn) return alert("Isi nomor keluar & masuk");
+          events.push({
+            ...quickContext,
+            players: [`OUT ${out}`, `IN ${inn}`],
+          });
+        } else {
+          let num = document.getElementById("quickNumber").value;
+          if (!num) return alert("Isi nomor punggung");
+          events.push({ ...quickContext, players: [num] });
+        }
+        renderLogs();
+        closeQuickModal();
+      }
+      function cancelQuick() {
+        adjustScore(quickContext.team, quickContext.type, -1);
+        closeQuickModal();
+      }
+      function closeQuickModal() {
+        document.getElementById("quickModal").classList.add("hidden");
+        quickContext = null;
+      }
+
+      // Score update
+      function adjustScore(team, type, delta) {
+        if (type === "Goal") {
+          document.getElementById(team + "Score").textContent =
+            parseInt(document.getElementById(team + "Score").textContent) +
+            delta;
+        }
+        if (type === "Own Goal") {
+          let opp = team === "home" ? "away" : "home";
+          document.getElementById(opp + "Score").textContent =
+            parseInt(document.getElementById(opp + "Score").textContent) +
+            delta;
+        }
+      }
+      function recalcScore() {
+        let home = 0,
+          away = 0;
+        events.forEach((e) => {
+          if (e.type === "Goal") {
+            if (e.team === "home") home++;
+            else away++;
+          }
+          if (e.type === "Own Goal") {
+            if (e.team === "home") away++;
+            else home++;
+          }
+        });
+        document.getElementById("homeScore").textContent = home;
+        document.getElementById("awayScore").textContent = away;
+      }
+
+      // Render logs
+      function renderLogs() {
+        document.getElementById("homeLog").innerHTML = "";
+        document.getElementById("awayLog").innerHTML = "";
+        events.forEach((e, i) => {
+          let div = document.createElement("div");
+          div.className =
+            "border p-2 rounded flex justify-between items-center";
+          let text = `${e.time} - ${e.type} (${e.players.join(" → ")})`;
+          div.innerHTML = `<span>${text}</span>
+      <span class='space-x-2'>
+        <button onclick='openEdit(${i})' class='px-2 py-1 bg-blue-500 text-white rounded'>Edit</button>
+        <button onclick='openDelete(${i})' class='px-2 py-1 bg-red-500 text-white rounded'>Delete</button>
+      </span>`;
+          document.getElementById(e.team + "Log").appendChild(div);
+        });
+      }
+
+      // Edit
+      function openEdit(i) {
+        editIndex = i;
+        let e = events[i];
+        document.getElementById("editTime").value = e.time;
+        let box = document.getElementById("editPlayerFields");
+        if (e.type === "Substitution") {
+          box.innerHTML = `<label>Pemain Keluar:<input id="editOut" value="${e.players[0].replace(
+            "OUT ",
+            ""
+          )}" type="number" class="border px-2 py-1 w-full mb-2"></label>
+                   <label>Pemain Masuk:<input id="editIn" value="${e.players[1].replace(
+                     "IN ",
+                     ""
+                   )}" type="number" class="border px-2 py-1 w-full"></label>`;
+        } else {
+          box.innerHTML = `<label>Nomor:<input id="editNum" value="${e.players[0]}" type="number" class="border px-2 py-1 w-full"></label>`;
+        }
+        document.getElementById("editModal").classList.remove("hidden");
+      }
+      function saveEdit() {
+        let e = events[editIndex];
+        e.time = document.getElementById("editTime").value;
+        if (e.type === "Substitution") {
+          e.players = [
+            `OUT ${document.getElementById("editOut").value}`,
+            `IN ${document.getElementById("editIn").value}`,
+          ];
+        } else {
+          e.players = [document.getElementById("editNum").value];
+        }
+        renderLogs();
+        closeEditModal();
+      }
+      function closeEditModal() {
+        document.getElementById("editModal").classList.add("hidden");
+      }
+
+      // Delete
+      function openDelete(i) {
+        deleteIndex = i;
+        document.getElementById("deleteModal").classList.remove("hidden");
+      }
+      function confirmDelete() {
+        events.splice(deleteIndex, 1);
+        renderLogs();
+        recalcScore();
+        closeDeleteModal();
+      }
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.add("hidden");
+      }
+
+      function exportRecap() {
+        let matchNumber = document.getElementById("matchNumber").value;
+        let homeTeam = document.getElementById("homeTeam").textContent; // bisa diganti input text jika ingin editable
+        let awayTeam = document.getElementById("awayTeam").textContent; // bisa diganti input text jika ingin editable
+        let homeScore = document.getElementById("homeScore").textContent;
+        let awayScore = document.getElementById("awayScore").textContent;
+
+        // Kirim ke Sheet FIXTURES
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            type: "fixture",
+            matchNumber,
+            homeTeam,
+            homeScore,
+            awayScore,
+            awayTeam,
+          }),
+        });
+
+        // Kirim ke Sheet RECAP
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            type: "recap",
+            matchNumber,
+            events,
+          }),
+        });
+
+        alert("Match recap berhasil dikirim ke Google Sheets!");
+      }
+
+      // RESET
+      function resetMatch() {
+        // reset timer
+        clearInterval(timerInterval);
+        timerInterval = null;
+        seconds = 0;
+        minutes = 0;
+        updateDisplay();
+
+        // reset skor
+        document.getElementById("homeScore").textContent = "0";
+        document.getElementById("awayScore").textContent = "0";
+
+        // reset tim & nomor pertandingan
+        document.getElementById("matchNumber").value = "";
+        document.getElementById("homeTeam").textContent = "";
+        document.getElementById("awayTeam").textContent = "";
+
+        // reset log & array events
+        events = [];
+        renderLogs();
+
+        // tampilkan modal reset sukses
+        document.getElementById("resetModal").classList.remove("hidden");
+      }
+
+      function closeResetModal() {
+        document.getElementById("resetModal").classList.add("hidden");
+      }
+    </script>
+  </body>
+</html>
